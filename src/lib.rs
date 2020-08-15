@@ -23,7 +23,7 @@
 //!     );
 //! }
 //! ```
-//! # to test this, cargo test -- +foo,-bar,+baz
+// to test this, cargo test -- +foo,-bar,+baz
 
 use std::str::Split;
 
