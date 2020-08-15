@@ -11,8 +11,8 @@
 kwp = "0.1.0"
 ```
 
-## `example`
-```rs
+## example
+```rust
 // cargo run -- +my,-keywords,+here
 
 use kwp::{Parser, Prefixes};
