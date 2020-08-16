@@ -7,8 +7,7 @@
 ## installation
 ```yml
 # within Cargo.toml
-
-kwp = "0.1.0"
+kwp = "0.2"
 ```
 
 ## example
