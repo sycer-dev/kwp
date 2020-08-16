@@ -5,22 +5,15 @@
 //! use std::env;
 //!
 //! fn main() {
-//!     let input = env::args_os()
-//!         .nth(1)
-//!         .expect("No input provided.")
-//!         .into_string()
-//!         .unwrap();
-//! 
+//!     let input = "+foo,-bar,+baz,-bak";
+//!
 //!     let parser = Parser::new(
 //!         &input,
 //!         Prefixes::default()
 //!     );
-//! 
-//!     let (pos, neg, _) = parser.parse();
-//!     println!(
-//!         "Input: {}\nPositive: {:#?}\nNegative: {:#?}",
-//!         input, pos, neg
-//!     );
+//!
+//!     let resp = parser.parse();
+//!     println!("{:#?}", resp);
 //! }
 //! ```
 // to test this, cargo test -- +foo,-bar,+baz
@@ -33,9 +26,17 @@ pub type Parsed = Vec<String>;
 pub type ParsedResponse = (Parsed, Parsed, Parsed);
 
 /// Represents the positive and negative keyword prefixes for parsing.
+#[derive(Debug, Copy, Clone)]
 pub struct Prefixes<'a> {
     pub positive: &'a str,
     pub negative: &'a str,
+}
+
+#[derive(Debug, Clone)]
+pub struct Keywords {
+    pub positive: Parsed,
+    pub negative: Parsed,
+    pub other: Parsed,
 }
 
 /// Default options for the Prefixes structure.
@@ -75,15 +76,15 @@ impl<'a> Parser<'a> {
     /// If set to true, the prefix of values will be stripped upon parsing.
     ///
     /// ## Example
-    /// ```rs
+    /// ```
     /// use kwp::{Parser, Prefixes};
     ///
     /// let mut parser = Parser::new("+foo", Prefixes::default());
     /// parser.should_retain_prefix(true);
     ///
-    /// let (pos, _, _) = parser.parse();
-    /// assert_eq!(pos, vec!["+foo"]);
-    /// assert_ne!(pos, vec!["foo"]);
+    /// let keywords = parser.parse();
+    /// assert_eq!(keywords.positive, vec!["+foo"]);
+    /// // assert_ne!(keywords.positive, vec!["foo"]);
     /// ```
     pub fn should_retain_prefix(&mut self, bool: bool) -> bool {
         self.retain_prefix = bool;
@@ -95,7 +96,7 @@ impl<'a> Parser<'a> {
         return split
             .filter(|e| e.starts_with(&prefix))
             .map(|e| {
-                if self.retain_prefix {
+                if !self.retain_prefix {
                     e.replace(&prefix, "")
                 } else {
                     e.to_string()
@@ -112,19 +113,58 @@ impl<'a> Parser<'a> {
     /// let parser = Parser::new("+foo,-bar,-baz", Prefixes::default());
     /// println!("{:#?}", parser.parse());
     /// ```
-    pub fn parse(&self) -> ParsedResponse {
+    pub fn parse(&self) -> Keywords {
         let split = self.input.clone();
         let split = split.split(",");
 
-        let pos = self.parse_with_prefix(split.clone(), self.prefixes.positive);
-        let neg = self.parse_with_prefix(split.clone(), self.prefixes.negative);
+        let positive = self.parse_with_prefix(split.clone(), self.prefixes.positive);
+        let negative = self.parse_with_prefix(split.clone(), self.prefixes.negative);
 
         let other = split
-            .filter(|x| !pos.iter().any(|y| x.contains(y)) && !neg.iter().any(|y| x.contains(y)))
+            .filter(|x| {
+                !positive.iter().any(|y| x.contains(y)) && !negative.iter().any(|y| x.contains(y))
+            })
             .map(|x| x.to_string())
             .collect();
 
-        return (pos, neg, other);
+        return Keywords {
+            positive,
+            negative,
+            other,
+        };
+    }
+
+    /// Finds products that match the provided positive & negative keywords.  
+    /// ⚠️ Case insensitive 
+    /// ## Example
+    /// ```
+    /// use kwp::{Parser, Prefixes};
+    /// 
+    /// let products = vec!["MyProduct Adult", "MyProduct Youth"];
+    ///     let parser = Parser::new(
+    ///         "+myproduct,-youth",
+    ///         Prefixes {
+    ///             positive: "+",
+    ///             negative: "-",
+    ///         },
+    ///     );
+    /// let keywords = parser.parse();
+    ///
+    /// let products = parser.match_products(products.clone(), keywords.clone());
+    /// assert_eq!(products, vec!["MyProduct Adult"]);
+    /// ```
+    pub fn match_products(&self, products: Vec<&str>, keywords: Keywords) -> Vec<String> {
+        let mut found: Vec<String> = vec![];
+        for product in products {
+            let p_lower = &product.to_lowercase();
+            println!("Debug: {}", product);
+            if keywords.positive.iter().any(|e| p_lower.to_lowercase().contains(&e.to_lowercase()))
+                && !keywords.negative.iter().any(|e| p_lower.contains(&e.to_lowercase()))
+            {
+                found.push(product.to_string());
+            }
+        }
+        return found;
     }
 }
 
@@ -140,9 +180,9 @@ mod test {
                 negative: "-",
             },
         );
-        let (pos, neg, _) = parser.parse();
-        assert_eq!(pos, vec!["+foo", "+baz"]);
-        assert_eq!(neg, vec!["-bar"]);
+        let keywords = parser.parse();
+        assert_eq!(keywords.positive, vec!["foo", "baz"]);
+        assert_eq!(keywords.negative, vec!["bar"]);
     }
 
     #[test]
@@ -156,9 +196,9 @@ mod test {
         );
         parser.should_retain_prefix(false);
 
-        let (pos, neg, _) = parser.parse();
-        assert_eq!(pos, vec!["+foo", "+baz"]);
-        assert_eq!(neg, vec!["-bar"]);
+        let keywords = parser.parse();
+        assert_eq!(keywords.positive, vec!["foo", "baz"]);
+        assert_eq!(keywords.negative, vec!["bar"]);
     }
 
     #[test]
@@ -170,9 +210,9 @@ mod test {
                 negative: "no!!",
             },
         );
-        let (pos, neg, _) = parser.parse();
-        assert_eq!(pos, vec!["yes!!foo", "yes!!baz"]);
-        assert_eq!(neg, vec!["no!!bar"]);
+        let keywords = parser.parse();
+        assert_eq!(keywords.positive, vec!["foo", "baz"]);
+        assert_eq!(keywords.negative, vec!["bar"]);
     }
 
     #[test]
@@ -184,7 +224,22 @@ mod test {
                 negative: "-",
             },
         );
-        let (_, _, other) = parser.parse();
-        assert_eq!(other, vec!["bak"]);
+        let keywords = parser.parse();
+        assert_eq!(keywords.other, vec!["bak"]);
+    }
+
+    #[test]
+    fn basic_products() {
+        let products = vec!["MyProduct Adult", "MyProduct Youth"];
+        let parser = Parser::new(
+            "+myproduct,-youth",
+            Prefixes {
+                positive: "+",
+                negative: "-",
+            },
+        );
+        let keywords = parser.parse();
+        let products = parser.match_products(products.clone(), keywords.clone());
+        assert_eq!(products, vec!["MyProduct Adult"]);
     }
 }
