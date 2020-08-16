@@ -13,26 +13,16 @@ kwp = "0.1.0"
 
 ## example
 ```rust
-// cargo run -- +my,-keywords,+here
-
 use kwp::{Parser, Prefixes};
-use std::env;
 
 fn main() {
-    let input = env::args_os()
-        .nth(1)
-        .expect("No input provided.")
-        .into_string()
-        .unwrap();
+    let input = "+foo,-bar,+baz,-bak";
 
     let parser = Parser::new(
         &input,
         Prefixes::default()
     );
-    let (pos, neg, other) = parser.parse();
-    println!(
-        "Input: {}\nPositive: {:#?}\nNegative: {:#?}\nOther: {:#?}",
-        input, pos, neg, other
-    );
+    let res = parser.parse();
+    println!("{:#?}", res);
 }
 ```
