@@ -28,3 +28,7 @@ path = "examples/products.rs"
 [[test]]
 name = "wasm"
 path = "tests/wasm.rs"
+
+[[test]]
+name = "main"
+path = "tests/main.rs"
