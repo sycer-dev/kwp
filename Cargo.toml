@@ -9,3 +9,11 @@ description = "An input parser for positive and negative keywords input (e.g: +f
 edition = "2018"
 keywords = ["parsing", "keywords"]
 authors = ["Carter Himmel <fyko@sycer.dev>"]
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+
+[[example]]
+name = "products"
+path = "examples/products.rs"
