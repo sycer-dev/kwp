@@ -157,7 +157,6 @@ impl<'a> Parser<'a> {
         let mut found: Vec<String> = vec![];
         for product in products {
             let p_lower = &product.to_lowercase();
-            println!("Debug: {}", product);
             if keywords.positive.iter().any(|e| p_lower.to_lowercase().contains(&e.to_lowercase()))
                 && !keywords.negative.iter().any(|e| p_lower.contains(&e.to_lowercase()))
             {
