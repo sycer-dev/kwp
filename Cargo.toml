@@ -10,6 +10,13 @@ edition = "2018"
 keywords = ["parsing", "keywords"]
 authors = ["Carter Himmel <fyko@sycer.dev>"]
 
+# wasm
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
 [[example]]
 name = "basic"
 path = "examples/basic.rs"
@@ -17,3 +24,7 @@ path = "examples/basic.rs"
 [[example]]
 name = "products"
 path = "examples/products.rs"
+
+[[test]]
+name = "wasm"
+path = "tests/wasm.rs"
