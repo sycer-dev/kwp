@@ -135,11 +135,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Finds products that match the provided positive & negative keywords.  
-    /// ⚠️ Case insensitive 
+    /// ⚠️ Case insensitive
     /// ## Example
     /// ```
     /// use kwp::{Parser, Prefixes};
-    /// 
+    ///
     /// let products = vec!["MyProduct Adult", "MyProduct Youth"];
     ///     let parser = Parser::new(
     ///         "+myproduct,-youth",
@@ -157,88 +157,18 @@ impl<'a> Parser<'a> {
         let mut found: Vec<String> = vec![];
         for product in products {
             let p_lower = &product.to_lowercase();
-            if keywords.positive.iter().any(|e| p_lower.to_lowercase().contains(&e.to_lowercase()))
-                && !keywords.negative.iter().any(|e| p_lower.contains(&e.to_lowercase()))
+            if keywords
+                .positive
+                .iter()
+                .any(|e| p_lower.to_lowercase().contains(&e.to_lowercase()))
+                && !keywords
+                    .negative
+                    .iter()
+                    .any(|e| p_lower.contains(&e.to_lowercase()))
             {
                 found.push(product.to_string());
             }
         }
         return found;
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::{Parser, Prefixes};
-    #[test]
-    fn basic_text() {
-        let parser = Parser::new(
-            "+foo,-bar,+baz",
-            Prefixes {
-                positive: "+",
-                negative: "-",
-            },
-        );
-        let keywords = parser.parse();
-        assert_eq!(keywords.positive, vec!["foo", "baz"]);
-        assert_eq!(keywords.negative, vec!["bar"]);
-    }
-
-    #[test]
-    fn do_not_retain_prefix() {
-        let mut parser = Parser::new(
-            "+foo,-bar,+baz",
-            Prefixes {
-                positive: "+",
-                negative: "-",
-            },
-        );
-        parser.should_retain_prefix(false);
-
-        let keywords = parser.parse();
-        assert_eq!(keywords.positive, vec!["foo", "baz"]);
-        assert_eq!(keywords.negative, vec!["bar"]);
-    }
-
-    #[test]
-    fn weird_prefixes() {
-        let parser = Parser::new(
-            "yes!!foo,no!!bar,yes!!baz",
-            Prefixes {
-                positive: "yes!!",
-                negative: "no!!",
-            },
-        );
-        let keywords = parser.parse();
-        assert_eq!(keywords.positive, vec!["foo", "baz"]);
-        assert_eq!(keywords.negative, vec!["bar"]);
-    }
-
-    #[test]
-    fn unparsed() {
-        let parser = Parser::new(
-            "+foo,-bar,+baz,bak",
-            Prefixes {
-                positive: "+",
-                negative: "-",
-            },
-        );
-        let keywords = parser.parse();
-        assert_eq!(keywords.other, vec!["bak"]);
-    }
-
-    #[test]
-    fn basic_products() {
-        let products = vec!["MyProduct Adult", "MyProduct Youth"];
-        let parser = Parser::new(
-            "+myproduct,-youth",
-            Prefixes {
-                positive: "+",
-                negative: "-",
-            },
-        );
-        let keywords = parser.parse();
-        let products = parser.match_products(products.clone(), keywords.clone());
-        assert_eq!(products, vec!["MyProduct Adult"]);
     }
 }
